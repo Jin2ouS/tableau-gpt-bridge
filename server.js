@@ -77,7 +77,8 @@ const getServer = () => {
       inputSchema: z.object({
         question: z.string().optional().describe("사용자 질문(키워드 기반 매핑)")
       }),
-      _meta: { ui: { resourceUri: tableauWidgetUri } }
+      // 호스트별 구현 차이로 nested/flat meta 모두 제공
+      _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
     },
     async ({ question }) => {
       const config = await loadViewsConfig();
@@ -99,7 +100,8 @@ const getServer = () => {
           tableauUrl: selected.url,
           question: question ?? ""
         },
-        _meta: { ui: { resourceUri: tableauWidgetUri } }
+        // 호스트별 구현 차이로 nested/flat meta 모두 제공
+        _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
       };
     }
   );
@@ -113,7 +115,8 @@ const getServer = () => {
       inputSchema: z.object({
         question: z.string().optional().describe("사용자 질문")
       }),
-      _meta: { ui: { resourceUri: tableauWidgetUri } }
+      // 호스트별 구현 차이로 nested/flat meta 모두 제공
+      _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
     },
     async ({ question }) => {
       const config = await loadViewsConfig();
@@ -138,7 +141,8 @@ const getServer = () => {
           tableauUrl: selected.url,
           question: question ?? ""
         },
-        _meta: { ui: { resourceUri: tableauWidgetUri } }
+        // 호스트별 구현 차이로 nested/flat meta 모두 제공
+        _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
       };
     }
   );
