@@ -46,6 +46,7 @@ function pickView({ question, config }) {
 const getServer = () => {
   // 버전을 올려 호스트 캐시(툴/리소스 메타) 갱신을 유도
   const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.1" });
+  const uiDomain = process.env.UI_DOMAIN?.trim();
 
   server.server.oninitialized = () => {
     const caps = server.server.getClientCapabilities();
@@ -70,6 +71,7 @@ const getServer = () => {
           _meta: {
             ui: {
               prefersBorder: true,
+              ...(uiDomain ? { domain: uiDomain } : {}),
               // iframe 내 Tableau Public 임베드를 허용
               csp: {
                 frameDomains: ["https://public.tableau.com", "https://*.tableau.com"],

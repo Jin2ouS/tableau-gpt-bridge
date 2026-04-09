@@ -47,6 +47,15 @@ Railway에 아래 환경변수를 추가하세요:
 
 - `ALLOWED_HOSTS`: `tableau-gpt-bridge-production.up.railway.app` 처럼 **배포 도메인(포트 제외)**을 콤마로 나열
 
+## 위젯 템플릿 도메인(UI_DOMAIN)
+
+ChatGPT 호스트는 UI 리소스(템플릿)에 대해 “도메인(domain) 설정”을 요구할 수 있습니다.
+이 경우 Railway Variables에 아래를 추가하세요:
+
+- `UI_DOMAIN`: 호스트가 요구하는 도메인(예: `*.oaiusercontent.com` 패턴)
+
+또한 Tableau처럼 **외부 iframe 임베드**는 호스트 정책상 추가 보안 검토/승인이 필요할 수 있습니다.
+
 ## 다음 단계(확장 포인트)
 
 - 질문을 LLM으로 분류/의도파악하여 `tableau-views.json` 룰을 더 정교하게 만들기
