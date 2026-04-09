@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 
 import { createMcpExpressApp } from "@modelcontextprotocol/express";
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
+import { getUiCapability } from "@modelcontextprotocol/ext-apps/server";
 import { NodeStreamableHTTPServerTransport } from "@modelcontextprotocol/node";
 import { isInitializeRequest, McpServer } from "@modelcontextprotocol/server";
 import * as z from "zod";
@@ -44,6 +45,17 @@ function pickView({ question, config }) {
 
 const getServer = () => {
   const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.0" });
+
+  server.server.oninitialized = () => {
+    const caps = server.server.getClientCapabilities();
+    const uiCap = getUiCapability(caps);
+    console.log("[client] capabilities", {
+      hasCapabilities: Boolean(caps),
+      extensions: caps?.extensions ? Object.keys(caps.extensions) : [],
+      uiCap,
+      uiMimeTypes: uiCap?.mimeTypes ?? []
+    });
+  };
 
   registerAppResource(server, "tableau-widget", tableauWidgetUri, {}, async () => {
     console.log("[resource] read", { uri: tableauWidgetUri });
