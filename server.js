@@ -44,7 +44,8 @@ function pickView({ question, config }) {
 }
 
 const getServer = () => {
-  const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.0" });
+  // 버전을 올려 호스트 캐시(툴/리소스 메타) 갱신을 유도
+  const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.1" });
 
   server.server.oninitialized = () => {
     const caps = server.server.getClientCapabilities();
@@ -57,7 +58,7 @@ const getServer = () => {
     });
   };
 
-  registerAppResource(server, "tableau-widget", tableauWidgetUri, {}, async () => {
+  registerAppResource(server, "tableau-widget-v2", tableauWidgetUri, {}, async () => {
     console.log("[resource] read", { uri: tableauWidgetUri });
     const html = await readFile(join(__dirname, "widget-v2.html"), "utf8");
     return {
