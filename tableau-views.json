@@ -1,0 +1,13 @@
+{
+  "default": {
+    "title": "Category별 Sales",
+    "url": "https://public.tableau.com/views/1_17757134035930/1?:embed=y&:showVizHome=n"
+  },
+  "rules": [
+    {
+      "keywords": ["sales", "매출", "판매"],
+      "title": "Sales 대시보드",
+      "url": "https://public.tableau.com/views/1_17757134035930/1?:embed=y&:showVizHome=n"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "tableau-gpt-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "latest",
+    "@modelcontextprotocol/express": "latest",
+    "@modelcontextprotocol/ext-apps": "latest",
+    "@modelcontextprotocol/node": "latest",
+    "@modelcontextprotocol/server": "latest",
+    "zod": "latest"
+  }
+}
