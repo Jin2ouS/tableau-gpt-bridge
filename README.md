@@ -38,6 +38,15 @@ npm start
    - `show_tableau_chart`: UI 위젯으로 차트 표시
    - `resolve_tableau_view`: 질문에 맞는 뷰를 선택(디버그/확인용)
 
+## Railway 배포 시 주의(필수)
+
+`createMcpExpressApp()`는 기본값으로 **localhost DNS rebinding 보호(Host 헤더 검증)**가 켜져 있어서,
+Railway 같은 외부 도메인에서 접속하면 `Invalid Host`로 **403**이 날 수 있습니다.
+
+Railway에 아래 환경변수를 추가하세요:
+
+- `ALLOWED_HOSTS`: `tableau-gpt-bridge-production.up.railway.app` 처럼 **배포 도메인(포트 제외)**을 콤마로 나열
+
 ## 다음 단계(확장 포인트)
 
 - 질문을 LLM으로 분류/의도파악하여 `tableau-views.json` 룰을 더 정교하게 만들기

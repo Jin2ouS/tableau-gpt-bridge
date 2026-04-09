@@ -140,7 +140,17 @@ const getServer = () => {
   return server;
 };
 
-const app = createMcpExpressApp();
+const allowedHosts = (process.env.ALLOWED_HOSTS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Railway 같은 외부 배포 환경에서는 Host 헤더가 배포 도메인으로 들어오므로
+// (기본 localhost 보호 정책을 쓰면 403이 날 수 있음) 명시적으로 허용 호스트를 설정합니다.
+const app = createMcpExpressApp({
+  host: "0.0.0.0",
+  allowedHosts: allowedHosts.length ? allowedHosts : undefined
+});
 const transports = {};
 
 app.post("/mcp", async (req, res) => {
