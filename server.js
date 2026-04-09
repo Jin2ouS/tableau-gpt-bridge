@@ -168,6 +168,49 @@ const getServer = () => {
     }
   );
 
+  // 캐시 우회용: 툴 이름을 바꿔 호스트가 새 정의를 강제로 읽게 함
+  registerAppTool(
+    server,
+    "show_tableau_chart_v3",
+    {
+      title: "Tableau 차트 보기 (v3)",
+      description: "캐시 우회용 v3 툴입니다. 선택된 Tableau Public 차트를 ChatGPT 앱 UI에 표시합니다.",
+      inputSchema: z.object({
+        question: z.string().optional().describe("사용자 질문")
+      }),
+      _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
+    },
+    async ({ question }) => {
+      const config = await loadViewsConfig();
+      const envDefaultUrl = process.env.TABLEAU_DEFAULT_URL?.trim();
+      if (envDefaultUrl) config.default.url = envDefaultUrl;
+
+      const selected = pickView({ question, config });
+      dlog("[show_tableau_chart_v3] selected", {
+        title: selected.title,
+        tableauUrl: selected.url,
+        question: question ?? ""
+      });
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: question
+              ? `요청하신 Tableau 차트를 표시합니다(v3). 질문: ${question}`
+              : "Tableau Public 차트를 표시합니다(v3)."
+          }
+        ],
+        structuredContent: {
+          title: selected.title,
+          tableauUrl: selected.url,
+          question: question ?? ""
+        },
+        _meta: { ui: { resourceUri: tableauWidgetUri }, "ui/resourceUri": tableauWidgetUri }
+      };
+    }
+  );
+
   return server;
 };
 
