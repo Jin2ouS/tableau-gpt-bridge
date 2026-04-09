@@ -99,6 +99,7 @@
     </div>
 
     <pre id="status"></pre>
+    <pre id="debug" style="display: none"></pre>
 
     <script>
       const els = {
@@ -108,13 +109,29 @@
         empty: document.getElementById("empty")
       };
       const statusEl = document.getElementById("status");
+      const debugEl = document.getElementById("debug");
 
       const setStatus = (line) => {
         statusEl.textContent = String(line ?? "");
       };
 
+      const setDebug = (value) => {
+        try {
+          debugEl.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+        } catch {
+          debugEl.textContent = String(value);
+        }
+      };
+
       const render = (toolResult) => {
-        const payload = toolResult?.structuredContent ?? {};
+        setDebug(toolResult);
+
+        const payload =
+          toolResult?.structuredContent ||
+          toolResult?.output?.structuredContent ||
+          toolResult?.result?.structuredContent ||
+          {};
+
         const title = payload.title || "Tableau 차트";
         const tableauUrl = payload.tableauUrl || "";
         const question = payload.question || "";
@@ -123,8 +140,10 @@
         els.sub.textContent = question ? `질문: ${question}` : "Tableau Public 차트가 표시됩니다.";
 
         if (!tableauUrl) {
+          els.iframe.removeAttribute("src");
           els.iframe.style.display = "none";
           els.empty.style.display = "block";
+          setStatus("tableauUrl missing");
           return;
         }
 
@@ -135,7 +154,28 @@
       };
 
       els.sub.textContent = "차트를 불러오는 중...";
-      setStatus("widget loaded; waiting for tool-result...");
+      setStatus("widget loaded");
+
+      const tryRenderFromKnownSources = () => {
+        const candidates = [
+          window.openai?.toolOutput,
+          window.openai?.toolResult,
+          window.openai?.state,
+          window.__TOOL_RESULT__,
+          window.__INITIAL_TOOL_RESULT__
+        ].filter(Boolean);
+
+        if (candidates.length > 0) {
+          setStatus("initial tool data found");
+          render(candidates[0]);
+          return true;
+        }
+
+        setStatus("waiting for tool-result...");
+        return false;
+      };
+
+      tryRenderFromKnownSources();
 
       window.addEventListener(
         "message",
@@ -150,16 +190,44 @@
               return;
             }
           }
-          if (!msg || msg.jsonrpc !== "2.0") return;
-          if (msg.method === "ui/notifications/tool-result") {
-            setStatus("tool-result received");
+
+          if (!msg) return;
+
+          if (msg.jsonrpc === "2.0" && msg.method === "ui/notifications/tool-result") {
+            setStatus("tool-result received via jsonrpc");
             render(msg.params);
             return;
           }
+
+          if (msg.type === "tool-result" || msg.type === "openai/toolResult") {
+            setStatus(`tool-result received via type=${msg.type}`);
+            render(msg.payload || msg.data || msg);
+            return;
+          }
+
           if (msg.method) setStatus(`msg: ${msg.method}`);
         },
         { passive: true }
       );
+
+      // 혹시 초기 데이터가 늦게 붙는 경우를 대비
+      setTimeout(() => {
+        tryRenderFromKnownSources();
+      }, 500);
+
+      setTimeout(() => {
+        if (!els.iframe.src) {
+          setStatus("no iframe src after timeout");
+        }
+      }, 3000);
+
+      els.iframe.addEventListener("load", () => {
+        setStatus(`iframe loaded: ${els.iframe.src}`);
+      });
+
+      els.iframe.addEventListener("error", () => {
+        setStatus(`iframe error: ${els.iframe.src}`);
+      });
     </script>
 
     <style>
@@ -180,6 +248,10 @@
         border-radius: 8px;
         pointer-events: none;
         z-index: 999999;
+      }
+
+      #debug {
+        display: none;
       }
     </style>
   </body>
