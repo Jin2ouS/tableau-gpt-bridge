@@ -46,6 +46,7 @@ const getServer = () => {
   const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.0" });
 
   registerAppResource(server, "tableau-widget", tableauWidgetUri, {}, async () => {
+    console.log("[resource] read", { uri: tableauWidgetUri });
     const html = await readFile(join(__dirname, "widget-v2.html"), "utf8");
     return {
       contents: [
@@ -55,6 +56,7 @@ const getServer = () => {
           text: html,
           _meta: {
             ui: {
+              prefersBorder: true,
               // iframe 내 Tableau Public 임베드를 허용
               csp: {
                 frameDomains: ["https://public.tableau.com", "https://*.tableau.com"],
