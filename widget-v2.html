@@ -313,7 +313,12 @@
 
       setTimeout(() => {
         if (!els.iframe.src) {
-          setStatus("no iframe src after timeout");
+          // 운영 안정성: tool 결과 전달이 지연/실패해도 빈 화면으로 멈추지 않게 폴백 표시
+          els.empty.style.display = "none";
+          els.iframe.style.display = "block";
+          els.iframe.src = FALLBACK_URL;
+          els.sub.textContent = "차트 로딩이 지연되어 샘플 차트를 표시합니다.";
+          setStatus("no iframe src after timeout (fallback applied)");
         }
       }, 3000);
 
