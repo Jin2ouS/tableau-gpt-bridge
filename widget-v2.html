@@ -135,12 +135,13 @@
       </div>
     </div>
 
-    <pre id="status"></pre>
-    <pre id="debug"></pre>
+    <pre id="status" style="display: none"></pre>
+    <pre id="debug" style="display: none"></pre>
 
     <script>
+      // 운영 기본값: toolResult의 tableauUrl을 우선 사용하고, 없을 때만 fallback 사용
       const FALLBACK_URL = "https://public.tableau.com/views/RegionalSampleWorkbook/Stocks?:embed=y&:showVizHome=no";
-      const FORCE_FALLBACK = true;
+      const FORCE_FALLBACK = false;
 
       const els = {
         title: document.getElementById("title"),
@@ -151,12 +152,20 @@
 
       const statusEl = document.getElementById("status");
       const debugEl = document.getElementById("debug");
+      const debugEnabled = new URLSearchParams(location.search).has("debug");
+
+      if (debugEnabled) {
+        statusEl.style.display = "block";
+        debugEl.style.display = "block";
+      }
 
       const setStatus = (line) => {
+        if (!debugEnabled) return;
         statusEl.textContent = String(line ?? "");
       };
 
       const setDebug = (value) => {
+        if (!debugEnabled) return;
         try {
           debugEl.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
         } catch {
@@ -165,6 +174,7 @@
       };
 
       const appendDebug = (value) => {
+        if (!debugEnabled) return;
         let next;
         try {
           next = typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -187,7 +197,7 @@
         const tableauUrl = payload.tableauUrl || "";
         const question = payload.question || "";
 
-        appendDebug({ phase: "render", payload, tableauUrl, title, question, toolResult });
+        appendDebug({ phase: "render", payload, tableauUrl, title, question });
 
         els.title.textContent = title;
         els.sub.textContent = question ? `질문: ${question}` : "Tableau Public 차트가 표시됩니다.";
@@ -215,18 +225,15 @@
         setStatus(`src set: ${effectiveUrl}`);
       };
 
-      els.sub.textContent = "차트를 불러오는 중...";
+      els.sub.textContent = "Tableau Public 차트가 표시됩니다.";
       setStatus("widget loaded");
 
-      // widget 로드 직후 openai 존재/키/상태 확인
+      // widget 로드 직후 openai 존재/키/상태 확인 (debug일 때만)
       const openai = window.openai;
       setDebug({
         phase: "init",
         hasOpenai: Boolean(openai),
-        openaiKeys: openai ? Object.keys(openai) : [],
-        toolOutput: openai?.toolOutput,
-        toolResult: openai?.toolResult,
-        state: openai?.state
+        openaiKeys: openai ? Object.keys(openai) : []
       });
 
       const tryRenderFromKnownSources = () => {
@@ -254,7 +261,7 @@
       if (window.openai && typeof window.openai.render === "function") {
         window.openai.render((data) => {
           setStatus("render callback from openai");
-          appendDebug({ phase: "openai.render", data });
+          appendDebug({ phase: "openai.render" });
           render(data);
         });
       }

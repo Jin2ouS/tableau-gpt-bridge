@@ -15,6 +15,10 @@ const __dirname = dirname(__filename);
 
 // 캐시 우회를 위해 버전된 widget URI 사용
 const tableauWidgetUri = "ui://widget/tableau-widget-v2.html";
+const DEBUG_LOGS = process.env.DEBUG_LOGS === "1";
+const dlog = (...args) => {
+  if (DEBUG_LOGS) console.log(...args);
+};
 
 async function loadViewsConfig() {
   const configPath = join(__dirname, "tableau-views.json");
@@ -51,7 +55,7 @@ const getServer = () => {
   server.server.oninitialized = () => {
     const caps = server.server.getClientCapabilities();
     const uiCap = getUiCapability(caps);
-    console.log("[client] capabilities", {
+    dlog("[client] capabilities", {
       hasCapabilities: Boolean(caps),
       extensions: caps?.extensions ? Object.keys(caps.extensions) : [],
       uiCap,
@@ -60,7 +64,7 @@ const getServer = () => {
   };
 
   registerAppResource(server, "tableau-widget-v2", tableauWidgetUri, {}, async () => {
-    console.log("[resource] read", { uri: tableauWidgetUri });
+    dlog("[resource] read", { uri: tableauWidgetUri });
     const html = await readFile(join(__dirname, "widget-v2.html"), "utf8");
     return {
       contents: [
@@ -141,7 +145,7 @@ const getServer = () => {
       if (envDefaultUrl) config.default.url = envDefaultUrl;
 
       const selected = pickView({ question, config });
-      console.log("[show_tableau_chart] selected", {
+      dlog("[show_tableau_chart] selected", {
         title: selected.title,
         tableauUrl: selected.url,
         question: question ?? ""
@@ -184,7 +188,7 @@ app.post("/mcp", async (req, res) => {
   try {
     const method = req.body?.method;
     if (method === "resources/read" || method === "resources/list" || method === "tools/list" || method === "tools/call") {
-      console.log("[mcp] request", {
+      dlog("[mcp] request", {
         method,
         id: req.body?.id ?? null,
         uri: req.body?.params?.uri,
