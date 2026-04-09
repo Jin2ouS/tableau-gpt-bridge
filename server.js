@@ -179,6 +179,16 @@ const transports = {};
 
 app.post("/mcp", async (req, res) => {
   try {
+    const method = req.body?.method;
+    if (method === "resources/read" || method === "resources/list" || method === "tools/list" || method === "tools/call") {
+      console.log("[mcp] request", {
+        method,
+        id: req.body?.id ?? null,
+        uri: req.body?.params?.uri,
+        name: req.body?.params?.name
+      });
+    }
+
     const sessionId = req.headers["mcp-session-id"];
     let transport;
 
