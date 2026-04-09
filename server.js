@@ -12,7 +12,8 @@ import * as z from "zod";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const tableauWidgetUri = "ui://widget/tableau-widget.html";
+// 캐시 우회를 위해 버전된 widget URI 사용
+const tableauWidgetUri = "ui://widget/tableau-widget-v2.html";
 
 async function loadViewsConfig() {
   const configPath = join(__dirname, "tableau-views.json");
@@ -45,7 +46,7 @@ const getServer = () => {
   const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.0" });
 
   registerAppResource(server, "tableau-widget", tableauWidgetUri, {}, async () => {
-    const html = await readFile(join(__dirname, "widget.html"), "utf8");
+    const html = await readFile(join(__dirname, "widget-v2.html"), "utf8");
     return {
       contents: [
         {
@@ -120,6 +121,11 @@ const getServer = () => {
       if (envDefaultUrl) config.default.url = envDefaultUrl;
 
       const selected = pickView({ question, config });
+      console.log("[show_tableau_chart] selected", {
+        title: selected.title,
+        tableauUrl: selected.url,
+        question: question ?? ""
+      });
       return {
         content: [
           {
