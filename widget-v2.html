@@ -250,6 +250,15 @@
 
       tryRenderFromKnownSources();
 
+      // ChatGPT 호스트가 postMessage 대신 openai.render 콜백으로 tool-result를 전달하는 경우가 있음
+      if (window.openai && typeof window.openai.render === "function") {
+        window.openai.render((data) => {
+          setStatus("render callback from openai");
+          appendDebug({ phase: "openai.render", data });
+          render(data);
+        });
+      }
+
       window.addEventListener(
         "message",
         (event) => {
