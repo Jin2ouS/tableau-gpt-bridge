@@ -99,7 +99,7 @@ const getServer = () => {
           tableauUrl: selected.url,
           question: question ?? ""
         },
-        _meta: {}
+        _meta: { ui: { resourceUri: tableauWidgetUri } }
       };
     }
   );
@@ -138,7 +138,7 @@ const getServer = () => {
           tableauUrl: selected.url,
           question: question ?? ""
         },
-        _meta: {}
+        _meta: { ui: { resourceUri: tableauWidgetUri } }
       };
     }
   );
