@@ -98,12 +98,19 @@
       </div>
     </div>
 
+    <pre id="status"></pre>
+
     <script>
       const els = {
         title: document.getElementById("title"),
         sub: document.getElementById("sub"),
         iframe: document.getElementById("viz"),
         empty: document.getElementById("empty")
+      };
+      const statusEl = document.getElementById("status");
+
+      const setStatus = (line) => {
+        statusEl.textContent = String(line ?? "");
       };
 
       const render = (toolResult) => {
@@ -124,22 +131,57 @@
         els.empty.style.display = "none";
         els.iframe.style.display = "block";
         els.iframe.src = tableauUrl;
+        setStatus(`src set: ${tableauUrl}`);
       };
 
       els.sub.textContent = "차트를 불러오는 중...";
+      setStatus("widget loaded; waiting for tool-result...");
 
       window.addEventListener(
         "message",
         (event) => {
           if (event.source !== window.parent) return;
-          const msg = event.data;
+          let msg = event.data;
+          if (typeof msg === "string") {
+            try {
+              msg = JSON.parse(msg);
+            } catch {
+              setStatus(`message (string, non-json): ${msg.slice(0, 200)}`);
+              return;
+            }
+          }
           if (!msg || msg.jsonrpc !== "2.0") return;
-          if (msg.method !== "ui/notifications/tool-result") return;
-          render(msg.params);
+          if (msg.method === "ui/notifications/tool-result") {
+            setStatus("tool-result received");
+            render(msg.params);
+            return;
+          }
+          if (msg.method) setStatus(`msg: ${msg.method}`);
         },
         { passive: true }
       );
     </script>
+
+    <style>
+      #status {
+        position: fixed;
+        left: 8px;
+        bottom: 8px;
+        margin: 0;
+        padding: 6px 8px;
+        max-width: calc(100% - 16px);
+        white-space: pre-wrap;
+        word-break: break-word;
+        font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        color: rgba(255, 255, 255, 0.92);
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        pointer-events: none;
+        z-index: 999999;
+      }
+    </style>
   </body>
 </html>
 
