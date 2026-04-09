@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tableau Widget v3</title>
+    <style>
+      :root {
+        --bg: #0b0c10;
+        --card: rgba(255, 255, 255, 0.06);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --border: rgba(255, 255, 255, 0.14);
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 20% 0%, rgba(80, 180, 255, 0.25), transparent 60%),
+          radial-gradient(900px 500px at 90% 10%, rgba(240, 120, 255, 0.22), transparent 55%),
+          var(--bg);
+        color: var(--text);
+      }
+      .wrap {
+        padding: 14px;
+      }
+      .header {
+        display: flex;
+        gap: 12px;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .title {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.1px;
+      }
+      .sub {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .badge {
+        font-size: 12px;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        white-space: nowrap;
+      }
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 18px 55px rgba(0, 0, 0, 0.4);
+      }
+      iframe {
+        width: 100%;
+        height: 720px;
+        border: 0;
+        display: block;
+        background: rgba(0, 0, 0, 0.15);
+      }
+      .empty {
+        padding: 16px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 12px;
+      }
+      #status {
+        position: fixed;
+        left: 8px;
+        bottom: 8px;
+        margin: 0;
+        padding: 6px 8px;
+        max-width: calc(100% - 16px);
+        white-space: pre-wrap;
+        word-break: break-word;
+        font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        color: rgba(255, 255, 255, 0.92);
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        pointer-events: none;
+        z-index: 999999;
+      }
+      #debug {
+        position: fixed;
+        right: 8px;
+        bottom: 8px;
+        width: 420px;
+        max-height: 50vh;
+        overflow: auto;
+        margin: 0;
+        padding: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font: 11px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        color: rgba(255, 255, 255, 0.92);
+        background: rgba(0, 0, 0, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 8px;
+        z-index: 999999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="header">
+        <div>
+          <div class="title" id="title">Tableau 차트</div>
+          <div class="sub" id="sub">Tableau Public 차트가 표시됩니다.</div>
+        </div>
+        <div class="badge" id="badge">Tableau Public / widget-v3 / 2026-04-09</div>
+      </div>
+
+      <div class="card" id="card">
+        <iframe id="viz" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <div class="empty" id="empty" style="display: none">
+          Tableau URL이 비어있습니다.<br />
+          <br />
+          - <code>tableau-views.json</code>의 <code>default.url</code>을 설정하거나<br />
+          - 환경변수 <code>TABLEAU_DEFAULT_URL</code>을 지정해주세요.
+        </div>
+      </div>
+    </div>
+
+    <pre id="status" style="display: none"></pre>
+    <pre id="debug" style="display: none"></pre>
+
+    <script>
+      const FALLBACK_URL = "https://public.tableau.com/views/RegionalSampleWorkbook/Stocks?:embed=y&:showVizHome=no";
+      const FORCE_FALLBACK = false;
+
+      const els = {
+        title: document.getElementById("title"),
+        sub: document.getElementById("sub"),
+        iframe: document.getElementById("viz"),
+        empty: document.getElementById("empty")
+      };
+
+      const statusEl = document.getElementById("status");
+      const debugEl = document.getElementById("debug");
+      const debugEnabled = new URLSearchParams(location.search).has("debug");
+
+      if (debugEnabled) {
+        statusEl.style.display = "block";
+        debugEl.style.display = "block";
+      }
+
+      const setStatus = (line) => {
+        if (!debugEnabled) return;
+        statusEl.textContent = String(line ?? "");
+      };
+
+      const appendDebug = (value) => {
+        if (!debugEnabled) return;
+        let next;
+        try {
+          next = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+        } catch {
+          next = String(value);
+        }
+        debugEl.textContent = `${debugEl.textContent}\n\n---\n\n${next}`.trim();
+      };
+
+      const extractStructured = (toolResult) =>
+        toolResult?.structuredContent ||
+        toolResult?.output?.structuredContent ||
+        toolResult?.result?.structuredContent ||
+        {};
+
+      const applyUrl = (url, reason) => {
+        if (!url) return false;
+        els.empty.style.display = "none";
+        els.iframe.style.display = "block";
+        els.iframe.src = url;
+        if (reason) els.sub.textContent = reason;
+        setStatus(`src set: ${url}`);
+        return true;
+      };
+
+      const render = (toolResult) => {
+        setStatus("render entered");
+        const payload = extractStructured(toolResult);
+
+        const title = payload.title || "Tableau 차트";
+        const tableauUrl = payload.tableauUrl || "";
+        const question = payload.question || "";
+
+        appendDebug({ phase: "render", tableauUrl, title, question, payload });
+
+        els.title.textContent = title;
+        els.sub.textContent = question ? `질문: ${question}` : "Tableau Public 차트가 표시됩니다.";
+
+        const effectiveUrl = FORCE_FALLBACK ? FALLBACK_URL : tableauUrl || FALLBACK_URL;
+        if (!effectiveUrl) {
+          els.iframe.removeAttribute("src");
+          els.iframe.style.display = "none";
+          els.empty.style.display = "block";
+          setStatus("tableauUrl missing");
+          return;
+        }
+
+        if (!tableauUrl) {
+          applyUrl(effectiveUrl, "차트 로딩이 지연되어 샘플 차트를 표시합니다.");
+          return;
+        }
+
+        applyUrl(effectiveUrl);
+      };
+
+      const tryRenderFromKnownSources = () => {
+        const candidates = [
+          window.openai?.toolOutput,
+          window.openai?.toolResult,
+          window.openai?.state,
+          window.__TOOL_RESULT__,
+          window.__INITIAL_TOOL_RESULT__
+        ].filter(Boolean);
+
+        if (candidates.length > 0) {
+          setStatus("initial tool data found");
+          render(candidates[0]);
+          return true;
+        }
+
+        setStatus("waiting for tool-result...");
+        return false;
+      };
+
+      setStatus("widget loaded");
+      tryRenderFromKnownSources();
+
+      if (window.openai && typeof window.openai.render === "function") {
+        window.openai.render((data) => {
+          setStatus("render callback from openai");
+          appendDebug({ phase: "openai.render" });
+          render(data);
+        });
+      }
+
+      window.addEventListener(
+        "message",
+        (event) => {
+          if (event.source !== window.parent) return;
+          let msg = event.data;
+
+          if (typeof msg === "string") {
+            try {
+              msg = JSON.parse(msg);
+            } catch {
+              setStatus(`message (string, non-json): ${msg.slice(0, 200)}`);
+              return;
+            }
+          }
+
+          appendDebug({ phase: "message", msg });
+          if (!msg) return;
+
+          if (msg.jsonrpc === "2.0" && msg.method === "ui/notifications/tool-result") {
+            setStatus("tool-result received via jsonrpc");
+            render(msg.params);
+            return;
+          }
+
+          if (msg.type === "tool-result" || msg.type === "openai/toolResult") {
+            setStatus(`tool-result received via type=${msg.type}`);
+            render(msg.payload || msg.data || msg);
+            return;
+          }
+        },
+        { passive: true }
+      );
+
+      setTimeout(() => {
+        tryRenderFromKnownSources();
+      }, 500);
+
+      setTimeout(() => {
+        if (!els.iframe.src) {
+          // tool 결과 전달이 지연/실패해도 빈 화면으로 멈추지 않게 폴백 표시
+          applyUrl(FALLBACK_URL, "차트 로딩이 지연되어 샘플 차트를 표시합니다.");
+          setStatus("no iframe src after timeout (fallback applied)");
+        }
+      }, 3000);
+
+      els.iframe.addEventListener("load", () => {
+        setStatus(`iframe loaded: ${els.iframe.src}`);
+      });
+
+      els.iframe.addEventListener("error", () => {
+        setStatus(`iframe error: ${els.iframe.src}`);
+      });
+    </script>
+  </body>
+</html>
+

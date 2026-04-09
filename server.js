@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // 캐시 우회를 위해 버전된 widget URI 사용
-const tableauWidgetUri = "ui://widget/tableau-widget-v2.html";
+const tableauWidgetUri = "ui://widget/tableau-widget-v3.html";
 const DEBUG_LOGS = process.env.DEBUG_LOGS === "1";
 const dlog = (...args) => {
   if (DEBUG_LOGS) console.log(...args);
@@ -49,7 +49,7 @@ function pickView({ question, config }) {
 
 const getServer = () => {
   // 버전을 올려 호스트 캐시(툴/리소스 메타) 갱신을 유도
-  const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.1" });
+  const server = new McpServer({ name: "tableau-gpt-bridge", version: "0.1.2" });
   const uiDomain = process.env.UI_DOMAIN?.trim();
 
   server.server.oninitialized = () => {
@@ -63,9 +63,9 @@ const getServer = () => {
     });
   };
 
-  registerAppResource(server, "tableau-widget-v2", tableauWidgetUri, {}, async () => {
+  registerAppResource(server, "tableau-widget-v3", tableauWidgetUri, {}, async () => {
     dlog("[resource] read", { uri: tableauWidgetUri });
-    const html = await readFile(join(__dirname, "widget-v2.html"), "utf8");
+    const html = await readFile(join(__dirname, "widget-v3.html"), "utf8");
     return {
       contents: [
         {
